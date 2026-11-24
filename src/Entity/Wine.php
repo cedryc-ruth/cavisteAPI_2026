@@ -6,6 +6,8 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Get;
 use App\Repository\WineRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -30,37 +32,59 @@ class Wine
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['wine:read'])]
     private ?string $name = null;
 
     #[ORM\Column(length: 4)]
+    #[Groups(['wine:read'])]
     private ?string $year = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['wine:read'])]
     private ?string $grapes = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['wine:read'])]
     private ?string $country = null;
 
     #[ORM\Column(length: 45, nullable: true)]
+    #[Groups(['wine:read'])]
     private ?string $region = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(['wine:read'])]
     private ?string $description = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['wine:read'])]
     private ?string $picture = null;
 
     #[ORM\Column]
+    #[Groups(['wine:read'])]
     private ?float $price = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 6, scale: 2)]
+    #[Groups(['wine:read'])]
     private ?string $capacity = null;
 
     #[ORM\Column(length: 15)]
+    #[Groups(['wine:read'])]
     private ?string $color = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['wine:read'])]
     private ?string $extra = null;
+
+    /**
+     * @var Collection<int, Comment>
+     */
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'wine', orphanRemoval: true)]
+    private Collection $comments;
+
+    public function __construct()
+    {
+        $this->comments = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -195,6 +219,36 @@ class Wine
     public function setExtra(?string $extra): static
     {
         $this->extra = $extra;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Comment>
+     */
+    public function getComments(): Collection
+    {
+        return $this->comments;
+    }
+
+    public function addComment(Comment $comment): static
+    {
+        if (!$this->comments->contains($comment)) {
+            $this->comments->add($comment);
+            $comment->setWine($this);
+        }
+
+        return $this;
+    }
+
+    public function removeComment(Comment $comment): static
+    {
+        if ($this->comments->removeElement($comment)) {
+            // set the owning side to null (unless already changed)
+            if ($comment->getWine() === $this) {
+                $comment->setWine(null);
+            }
+        }
 
         return $this;
     }
